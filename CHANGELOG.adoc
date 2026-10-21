@@ -1,0 +1,227 @@
+= Changements
+
+Les versions de `picodev-lab`, la plus récente en tête. Une version est un tag `vX.Y.Z`
+du dépôt.
+
+== 0.9.0
+
+* Dépôt public : `PICODEV-SAS/picodev-lab-plugin`. L'installation devient
+  `/plugin marketplace add PICODEV-SAS/picodev-lab-plugin` puis
+  `/plugin install picodev-lab@picodev-lab` ; l'avis de mise à jour et le lien « nouveautés »
+  du panneau suivent ce dépôt.
+* `server.json` : le MCP du labo (`https://lab.picodev.fr/mcp`, HTTP « streamable », sans
+  compte) décrit pour le registre MCP officiel, sous `io.github.PICODEV-SAS/picodev-lab`.
+* `plugin.json` : le champ `repository`.
+* `picodev-lab-client` v0.7.1, publié sur `PICODEV-SAS/picodev-lab-client`.
+
+== 0.8.0
+
+* Spec illustrée (architecture 0.16) : `/lab-projet` propose, une fois l'essentiel écrit, des
+  illustrations (synoptique, vue éclatée, forme, mise en situation) dessinées par la nouvelle
+  skill `lab-illustrer`, adaptée de diagram-design (Cathryn Lavery, MIT, voir `CREDITS.md`).
+  Chacune est montrée et gardée seulement sur un oui, dans `spec-figures/`, et part dans le PDF.
+* Coordonnées dans le document : sur demande, une rubrique `## Coordonnées`, imprimée en fin de
+  spec.
+* Langue : la spec suit la langue des réponses ; `lab.py brief` sans `--lang` prend celle des
+  titres du fichier (français ou anglais).
+* `lab.py workspace <dossier>` : un dossier dédié à la spec, avec le squelette et
+  `spec-figures/`, sans rien écraser.
+* `lab.py brief` envoie les illustrations (PNG ou SVG, 3 au plus, 200 Kio chacune, dans le dossier
+  de la spec seulement) et retire leurs lignes du texte des rubriques.
+* Onglet Projet : nombre d'illustrations, coordonnées dans le document, et le crédit
+  « Illustrations d'après diagram-design (Cathryn Lavery, MIT) » dès qu'une illustration existe.
+
+== 0.7.4
+
+* « la session du labo est terminée » ne revient plus toutes les 2 s : une session que le labo
+  ne connaît plus est mise de côté une fois, même si son fichier n'a pas pu être effacé.
+* Windows : le panneau et les hooks trouvent Python sous `python3`, sinon `python` (ou `py -3`
+  pour le panneau). Sans cela, rien de ce qui passe par `lab.py` ne marchait sur Windows.
+
+== 0.7.3
+
+* Partage : LinkedIn et X ; Bluesky retiré (panneau, `/lab-partage`, README).
+
+== 0.7.2
+
+* Dans VS Code, le panneau ne s'ouvre plus de lui-même à l'ouverture d'une session, et la
+  bande au-dessus de l'invite (compte à rebours, niveau) n'est plus dessinée : l'extension
+  Picodev Lab montre déjà tout cela. « afficher le panneau ici quand même » rend les deux.
+
+== 0.7.1
+
+* Onglet Projet : une carte « Vous avez un projet ? » dit ce qu'est la spécification, que
+  Picodev aide à formaliser le projet, et que la spec reste sur le poste tant qu'on ne
+  l'envoie pas. La carte « Et pour votre projet ? » le dit aussi.
+* Dans VS Code, le panneau s'efface : une note renvoie à l'extension Picodev Lab, plus riche ;
+  « afficher le panneau ici quand même » rend le panneau complet. Le terminal ne change pas.
+
+== 0.7.0
+
+* Binaire d'abord : le hook compile le sketch sur votre poste avec `arduino-cli` (carte et
+  bibliothèques de `read_setup`, gardées dans le fichier de session) et envoie le programme
+  (`push_program`, avec les sources). Le labo ne compile qu'en repli : pas d'`arduino-cli`,
+  cœur ou bibliothèque absents et non installables (un essai d'installation par session), un
+  programme de plus de 48 Kio, un labo sans `push_program`. Une erreur du code n'est pas un
+  repli : rien n'est envoyé, les erreurs du compilateur vont à Claude. Le message dit toujours
+  le chemin : « compilé sur votre poste » ou « compilé par le labo ». `PICODEV_ARDUINO_CLI` :
+  un `arduino-cli` hors du `PATH`. Le hook a 120 s au lieu de 20.
+* `/lab` vérifie une fois `arduino-cli` et le cœur de la carte, et propose de les installer
+  sans l'imposer.
+* Dépôt git local : `lab.py git status|init|off`. `/lab` et un bouton du panneau proposent
+  `git init` (et un `.gitignore` des sorties de compilation) quand le dossier du sketch n'est
+  dans aucun dépôt ; sur oui, un commit après chaque envoi réussi. Jamais poussé.
+* Le hook ne dit plus rien pour un fichier source hors d'un dossier de sketch. Un dossier
+  `sketch/` absent n'est plus une trace Python : le message le dit, le panneau propose
+  d'écrire le sketch de départ.
+* Panneau :
+** l'étape suivante sur l'onglet Session, selon l'état (ouvrir le banc, aller au Défi et
+   /lab-defi, ou en Libre écrire un sketch et /lab-montage) ; où est le sketch et comment le
+   dernier envoi a été compilé (`compile.origin`) ;
+** Défi : « résoudre ce niveau avec Claude » (/lab-defi) ; l'ancien « pousser et tester »
+   devient « pousser le sketch tel quel » ; « ouvrez le banc » est un lien, comme dans la
+   bande au-dessus du prompt ;
+** en Libre, l'onglet s'appelle Libre, avec un bouton pour pousser, un pour changer le
+   circuit avec Claude, et ce qu'on peut demander ;
+** une erreur de compilation (du labo ou du poste) a son bouton « demander à Claude de
+   corriger », qui lui passe le journal ;
+** « Terminer » et la visibilité demandent confirmation, avec les spectateurs coupés ;
+** « Comment ça marche » en mots simples, ouvert à la première visite, aussi avec une
+   session ; les clics en mode plein écran du terminal sont signalés ;
+** Montages : Libre, Défi et BIENTÔT expliqués ; Projet : « reprendre la spec » pour une
+   spec commencée, « envoyer la spec » seulement avec une rubrique écrite ; le journal et les
+   cartes en mots simples (plus de « MCP · N outils », de noms d'outils, d'« auto-push ») ;
+** en anglais pour qui n'est pas francophone, comme les textes des fiches ; « ◂ ▸ » ont un
+   libellé, l'onglet Banc réel s'ouvre et dit ce qui vient.
+* `picodev-lab-client` v0.6.0 (`push_program`, `compile.origin`).
+* Il faut le hub avec `push_program` (contrat 0.15) pour compiler sur le poste ; avec un hub
+  plus ancien, le labo compile, comme avant.
+
+== 0.6.0
+
+* `/lab-projet` : l'entretien suit l'outil `spec_draft` du labo, qui sert les consignes de
+  Picodev, la rubrique à demander ensuite, ce qu'elle cherche et ses questions ; Claude les
+  pose, une à la fois, sur votre propre modèle. Le tableau des rubriques n'est plus dans la
+  skill. L'aperçu du PDF vient de `spec_draft` (`pdf=true`), au gabarit de Picodev Lab ;
+  rien n'est envoyé.
+* `lab.py brief` : sans `--send`, l'aperçu par `spec_draft` (`missing` : les rubriques pas
+  encore remplies ; `next` : l'identifiant de la suivante ; `ready`) ; avec `--send`,
+  `brief_submit` comme avant. `--lang fr|en` : la langue du visiteur, titres du PDF.
+* « Rendez-vous / informations » : `request_meeting` sert aussi à poser une question à
+  Picodev (la question dans `context`). Le bouton du panneau change de nom.
+* `picodev-lab-client` v0.5.0 (`spec_draft`, `language` de `brief_submit`).
+* Il faut le hub v0.11.0 (`spec_draft`, contrat 0.14).
+
+== 0.5.4
+
+* Panneau : la mention « simulation dans le navigateur · Velxio (AGPLv3) » n'est plus en pied
+  de chaque onglet, seulement en bas de l'onglet Session, comme dans l'extension VS Code.
+  L'onglet Projet garde « rien n'est envoyé sans votre accord ».
+
+== 0.5.3
+
+* Panneau, en anglais pour qui n'est pas francophone : le titre du montage (carte Montage),
+  le titre, la consigne et les indices du niveau (onglet Défi) viennent de la traduction de la
+  fiche (`i18n.en` de `read_setup`), champ par champ ; un champ non traduit reste en français.
+  La langue : le réglage `language` de Claude Code, sinon la locale (`LC_ALL`, `LC_MESSAGES`,
+  `LANG`) ; sans l'un ni l'autre (ou locale `C`), le français. La liste des montages aussi,
+  quand le hub donne leur traduction (`i18n` de `list_setups`). Le reste du panneau reste en
+  français.
+
+== 0.5.2
+
+* Passer au niveau suivant sans quitter Claude Code (`next_level`, comme le bouton
+  « Niveau suivant » du banc) :
+** `/lab-defi`, une fois tous les tests verts, vous demande si vous voulez le niveau suivant
+   (ou continue si vous l'avez déjà dit), le demande au banc et reprend la boucle sur le
+   nouveau niveau. Au dernier niveau, c'est vous qui cliquez « Terminer » dans le banc.
+   Avant, `/lab-defi` disait à tort que le banc passait seul au niveau suivant.
+** Panneau, onglet Défi : bouton « Niveau suivant » quand tous les tests du niveau sont
+   réussis et que ce n'est pas le dernier ; au dernier, « niveau réussi, terminez dans le
+   banc ».
+* `picodev-lab-client` v0.4.2.
+* Il faut le hub v0.6.3.
+
+== 0.5.1
+
+* Panneau, carte Capture : elle montre la capture de la session, celle de l'agent, prise de
+  `session_status` (`capture`) : « Logique · enregistrement… » (ou Analogique), puis ses
+  mesures (fronts, fréquence, rapport cyclique ou durées haut et bas ; tensions min, max,
+  moyenne et fréquence), ou « la capture a échoué » avec son détail. Le panneau la lit une
+  seule fois (`read_capture`, qui s'inscrit à votre journal), quand elle est prête ; une
+  nouvelle capture est lue à son tour. Le chronogramme, toujours à la demande.
+* Le panneau ne lance plus de capture (il remplacerait celle de l'agent : une par session),
+  et les onglets Logique et Analogique disparaissent : le type est dans la ligne. Pour
+  capturer, demandez à Claude, par exemple « capture D2 pendant 1 s ». Même comportement
+  que l'extension VS Code.
+* `picodev-lab-client` v0.4.1.
+* Il faut le hub v0.6.1 (lab.picodev.fr l'a).
+
+== 0.5.0
+
+* Panneau, carte Montage (onglet Session) : le schéma du montage (`read_setup`, image dans
+  le terminal quand il sait les montrer, lien ailleurs), ses composants et à quelle broche
+  ils sont branchés, les voies mesurées ; « circuit modifié » quand le banc n'a plus le
+  circuit de départ. Bouton « schéma » sur chaque montage, avant toute session.
+* Panneau, carte Capture : onglets Logique et Analogique. Analogique : min, max, moyenne
+  et fréquence de chaque voie (`capture_analog`) ; le chronogramme du labo en image,
+  seulement quand vous le demandez. Le circuit ne se modifie pas depuis le panneau.
+* `picodev-lab-client` v0.4.0.
+* `/lab` décrit le montage avant d'ouvrir la session (`read_setup` : composants, fils, voies
+  mesurées) et donne le lien de son schéma.
+* `/lab-defi` lit le montage, mesure avant et après une correction (`capture_logic`,
+  `capture_analog`, `read_capture`) et ne demande le chronogramme en image que quand il aide.
+* Nouvelle commande `/lab-montage` : en Libre, change le circuit du banc (`push_circuit`),
+  après avoir dit ce qui change et reçu votre oui.
+* Il faut le labo v0.8 (lab.picodev.fr l'a).
+
+== 0.4.0
+
+* Le panneau parle au labo par `picodev-lab-client` v0.3.0 (Apache 2.0), copié dans
+  `hooks/vendor/` avec sa version et son empreinte (`VERSION`). Même comportement ; une
+  session finie est reconnue par le type d'erreur du client, plus par son texte.
+* L'état de la session est lu par `status()` du client toutes les 2 secondes ; un labo
+  sans `session_status` garde le comportement de la 0.2.0.
+* Un message d'erreur du labo s'affiche tel que le labo l'écrit ; quand le labo ne
+  répond pas, le panneau dit « labo injoignable ».
+
+== 0.3.0
+
+* Panneau : l'état de la session est relu toutes les 2 secondes par `session_status`,
+  qui ne laisse pas de trace dans votre journal ; la simulation n'est relue que quand
+  elle change (nouvelle compilation, nouveau niveau, navigateur connecté ou parti,
+  tests en cours, carte Défi ou Simulation sous vos yeux).
+* Carte Session : navigateur connecté, visibilité, lien spectateur à copier, nombre de
+  spectateurs, heure de fin, niveau n/N. Le segment de la ligne d'état et la bande
+  au-dessus du prompt disent aussi quand le navigateur est absent.
+* Un labo sans `session_status` garde le comportement de la 0.2.0.
+* Les commandes `/lab`, `/lab-defi` et `/lab-partage` passent par `session_status` pour
+  savoir si le banc est ouvert.
+
+== 0.2.0
+
+* Le panneau « Lab » (Claude Code 2.1.289 ou plus récent) : onglets Session, Défi,
+  Simulation, Journal, Projet ; cartes repliables ; bande au-dessus du prompt ; segment
+  de la ligne d'état ; notifications (niveau réussi, compilation en échec, fin de
+  session proche) ; logo Picodev animé.
+* Partage d'un résultat : lien `lab.picodev.fr/p/…`, LinkedIn, Bluesky, X.
+* Les boutons qui demandent votre avis (ouvrir une session, décrire le projet, envoyer
+  la spec, prendre rendez-vous) passent la main à Claude ; aucun bouton n'envoie rien
+  seul.
+* Les textes du labo sont lus par leurs champs, en français comme en anglais.
+* Les réponses du labo sont lues dans `structuredContent` d'abord ; le PDF de la spec
+  est écrit avec un chemin absolu.
+* README en français.
+
+== 0.1.0
+
+* Le MCP du labo, `https://lab.picodev.fr/mcp`, déclaré à l'installation.
+* Commandes `/lab`, `/lab-defi`, `/lab-partage`, `/lab-projet`, `/lab-push`.
+* La session ouverte gardée dans le dossier de données du plugin (droits 600), jamais
+  dans votre projet.
+* Envoi automatique du sketch après chaque écriture d'un `.ino`, `.h`, `.cpp` ou `.c`,
+  dans les limites du labo (8 fichiers, 64 Kio).
+* Avis de mise à jour au démarrage, une fois par jour au plus.
+* `/lab-projet` : la spec de votre projet sur 8 rubriques, aperçu du PDF, envoi à
+  Picodev et demande de rendez-vous seulement après votre oui au texte de consentement.
+* Licence Apache 2.0.

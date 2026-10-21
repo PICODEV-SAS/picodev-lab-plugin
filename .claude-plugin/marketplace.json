@@ -1,0 +1,12 @@
+{
+  "name": "picodev-lab",
+  "owner": { "name": "Picodev" },
+  "description": "Picodev Lab plugins for Claude Code",
+  "plugins": [
+    {
+      "name": "picodev-lab",
+      "source": "./picodev-lab",
+      "description": "Picodev Lab from Claude Code: the lab's MCP (Arduino benches simulated in your browser), guided challenges, live push of your sketch"
+    }
+  ]
+}

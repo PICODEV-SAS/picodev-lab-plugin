@@ -1,0 +1,3 @@
+.worktrees/
+**/.claude-plugin/types/
+__pycache__/

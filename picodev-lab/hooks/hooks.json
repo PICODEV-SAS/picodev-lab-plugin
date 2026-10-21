@@ -1,0 +1,32 @@
+{
+  "description": "picodev-lab: the sketch pushed to the lab after each write, the update notice, and the Lab pane (mods, Claude Code 2.1.289+)",
+  "modules": [
+    "./register.tsx"
+  ],
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "py=python3; python3 -c '' 2>/dev/null || py=python; \"$py\" \"${CLAUDE_PLUGIN_ROOT}/scripts/lab.py\" hook-push",
+            "timeout": 120
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "py=python3; python3 -c '' 2>/dev/null || py=python; \"$py\" \"${CLAUDE_PLUGIN_ROOT}/scripts/lab.py\" update-check",
+            "timeout": 8
+          }
+        ]
+      }
+    ]
+  }
+}

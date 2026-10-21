@@ -1,0 +1,240 @@
+= Picodev Lab pour Claude Code
+
+Programmez un Arduino depuis votre agent. Ce plugin Claude Code branche Claude sur
+https://lab.picodev.fr[Picodev Lab] : il ouvre un banc Arduino simulé dans votre
+navigateur, y pousse votre sketch à chaque modification, lit la simulation et les tests,
+et vous guide dans les défis du labo. Sans compte, sans carte, sans rien installer
+d'autre que le plugin. Avec `arduino-cli`, le sketch est compilé sur votre poste ; sans, par
+le labo.
+
+== Installation
+
+Dans Claude Code :
+
+----
+/plugin marketplace add PICODEV-SAS/picodev-lab-plugin
+/plugin install picodev-lab@picodev-lab
+----
+
+Puis tapez `/lab`.
+
+Il faut :
+
+* `python3` : le hook d'écriture et les commandes s'en servent (bibliothèque standard seulement) ;
+* `git` : pour savoir, une fois par jour, si une nouvelle version existe, et pour le dépôt
+  local du sketch si vous le voulez (voir plus bas) ;
+* facultatif, `arduino-cli` (https://docs.arduino.cc/arduino-cli/installation/[installation]) :
+  le sketch est alors compilé sur votre poste. `/lab` vérifie s'il est là et propose de
+  l'installer, sans l'imposer. Hors du `PATH` : `PICODEV_ARDUINO_CLI=/chemin/arduino-cli` ;
+* Claude Code 2.1.289 ou plus récent pour le panneau « Lab » (les mods sont en accès
+  anticipé). Sans lui, tout le reste marche : MCP, commandes, hook.
+
+Autres outils (opencode, Cursor, VS Code, Codex…) : déclarez le serveur MCP
+`https://lab.picodev.fr/mcp` (HTTP « streamable », sans compte). Vous aurez les outils du
+labo, sans les commandes, le hook ni le panneau.
+
+== Commandes
+
+[cols="1,3", options="header"]
+|===
+|Commande |Ce qu'elle fait
+
+|`/lab [setup] [libre\|defi]`
+|Choisit le montage et vous le décrit (composants, fils, voies mesurées, image du schéma), ouvre une session, vous donne le lien du banc à ouvrir dans votre
+navigateur (c'est lui qui simule) et attend qu'il soit connecté. Propose d'écrire le
+sketch de départ dans `sketch/`.
+
+|`/lab-defi`
+|La boucle d'un défi : lit le montage, la consigne et les tests du niveau, mesure (capture
+logique ou analogique) avant et après chaque correction, corrige le sketch, le pousse, relit
+les résultats jusqu'au vert, puis passe au niveau suivant si vous le voulez (au dernier, vous
+cliquez « Terminer » dans le banc). Ne lit jamais une solution ; les indices,
+un par un, quand vous les demandez.
+
+|`/lab-montage [changement]`
+|En Libre : ajoute, retire ou rebranche des composants du circuit de votre banc. Vous dit
+d'abord ce qui change et n'envoie rien sans votre oui (le circuit est remplacé, la
+simulation s'arrête).
+
+|`/lab-partage [privee\|lien\|publique]`
+|Qui peut regarder votre banc, et le lien spectateur. En fin de défi, le lien de partage
+(`lab.picodev.fr/p/…`) et les liens LinkedIn et X. Changer la visibilité coupe
+les spectateurs en place.
+
+|`/lab-projet`
+|Décrire votre propre projet électronique : les questions de Picodev, servies par le labo
+et posées par Claude une à la fois, sur 8 rubriques écrites dans `spec-projet.md` sur
+votre poste, dans un dossier dédié si vous le voulez (`lab.py workspace`). La spec suit la
+langue de vos réponses. Une fois l'essentiel écrit, Claude propose des illustrations
+(synoptique, vue éclatée, forme, mise en situation, en SVG) que vous gardez ou non, et vous
+demande si vos coordonnées doivent figurer dans le document. Aperçu du PDF possible, avec ses
+illustrations. Rien n'est envoyé à Picodev sans votre oui explicite,
+donné après avoir vu ce qui part et le texte de consentement ; même chose pour une demande
+de rendez-vous ou une question à Picodev (« Rendez-vous / informations »).
+
+|`/lab-illustrer`
+|Les dessins de la spec, appelés par `/lab-projet` : un à la fois, montré, gardé dans
+`spec-figures/` seulement sur votre oui. Adapté de diagram-design (voir Crédits).
+
+|`/lab-push on\|off`
+|Active ou coupe l'envoi automatique du sketch (voir plus bas).
+
+|`/picodev-lab`
+|Ouvre le panneau « Lab » (avec le mod seulement).
+|===
+
+Les commandes s'écrivent aussi avec le nom du plugin devant : `/picodev-lab:lab`,
+`/picodev-lab:lab-defi`…
+
+== Envoi automatique du sketch
+
+Après chaque `Write` ou `Edit` de Claude sur un `.ino`, `.h`, `.cpp` ou `.c`, si une session
+est ouverte pour ce projet, le hook compile le dossier de ce fichier et l'envoie au banc. Le
+dossier doit contenir un `.ino` ; un fichier source ailleurs est laissé en paix, sans message.
+
+. *Compilé sur votre poste* : la carte et les bibliothèques du montage viennent du labo
+  (`read_setup`), `arduino-cli compile --fqbn …` produit le programme, qui part au banc
+  (`push_program`) avec les sources, montrées dans l'éditeur du banc en lecture. Une fois
+  par session, le hook essaie d'installer le cœur ou les bibliothèques qui manquent
+  (`arduino-cli core install`, `lib install`, en temps borné).
+. *Compilé par le labo* (le repli) : pas d'`arduino-cli`, cœur ou bibliothèque absents et non
+  installables, programme trop gros, ou un labo sans `push_program`. Les sources partent
+  (`push_to_editor`) et le labo compile.
+. *Erreur du code* : ce n'est pas un repli, le labo échouerait de même. Rien n'est envoyé ;
+  les erreurs du compilateur vont à Claude, qui corrige le sketch.
+
+Le message du hook, le panneau et le journal disent toujours le chemin pris. La première
+compilation peut prendre de 10 à 30 secondes ; le hook a 2 minutes au plus.
+
+Rien n'est envoyé, et le message dit pourquoi, quand le dossier dépasse les limites du labo
+(8 fichiers, 64 Kio en tout, noms en lettres, chiffres, `.`, `_`, `-` ; un programme de
+48 Kio au plus), quand aucun navigateur n'est ouvert sur le banc, ou quand la session est
+terminée.
+
+== Dépôt git local
+
+À l'ouverture d'une session, si le dossier du sketch n'est dans aucun dépôt git, `/lab` (et
+un bouton du panneau) propose d'en créer un : `git init` et un `.gitignore` des sorties de
+compilation. Sur oui, chaque envoi réussi fait un commit (« push 14:32 (compilé sur votre
+poste) »). Le dépôt reste sur votre poste : le plugin ne pousse jamais vers un hébergeur. Un
+dossier déjà dans votre propre dépôt n'est pas touché.
+
+== Le panneau « Lab »
+
+Onglets Session, Défi (Libre en mode libre), Simulation, Journal, Projet (et Banc réel, à
+venir) : la session, l'étape suivante, où est le sketch et comment il a été compilé, la
+visibilité (confirmée avant de couper les spectateurs), le montage (schéma, composants, voies mesurées), la consigne et les tests du
+niveau (et « Niveau suivant » quand ils sont tous réussis), la compilation, les traces des
+broches, la série, les captures logique et analogique (chronogramme à la demande), les appels
+de l'agent au labo, l'avancement de votre spec.
+Une bande au-dessus du prompt et un segment de la ligne d'état résument la session. Le
+panneau relit l'état de la session toutes les 2 secondes (`session_status`, sans trace dans
+votre journal) et ne relit la simulation que quand elle a changé ; la capture de l'agent, il
+la montre, et la lit une seule fois quand elle est prête.
+
+Les boutons qui demandent votre avis (ouvrir une session, résoudre un niveau, corriger une
+erreur de compilation, changer le circuit, décrire le projet, envoyer la spec, rendez-vous /
+informations) passent la main à Claude, qui suit la commande correspondante. « Terminer » et
+la visibilité demandent confirmation. Les clics n'arrivent au panneau qu'en mode plein écran
+du terminal. Le panneau est en anglais pour qui n'est pas francophone (réglage `language` de
+Claude Code, sinon la locale).
+
+Dans VS Code, le panneau s'efface : il ne s'ouvre pas de lui-même et la bande n'est pas
+dessinée, car l'extension Picodev Lab (`PICODEV-SAS/picodev-lab-vscode`) y montre le labo.
+`/picodev-lab` y ouvre une note qui le dit, avec « afficher le panneau ici quand même ».
+
+== Ce qui part, et où
+
+[cols="2,3,3", options="header"]
+|===
+|Vers |Quoi |Quand
+
+|`https://lab.picodev.fr/mcp`
+|Les appels aux outils du labo : ouvrir et fermer une session, le contenu des fichiers du
+dossier du sketch (`push_to_editor`), lire la fiche du montage, la simulation et les tests,
+ou le programme compilé sur votre poste (`push_program` : texte HEX et sources),
+la visibilité, le passage au niveau suivant, les captures logique et analogique, le circuit
+(`push_circuit`, en Libre).
+|Quand Claude appelle un outil, après chaque écriture d'un sketch (hook), toutes les
+2 secondes tant qu'une session est ouverte, et une fois par minute pour la liste des
+montages (avec le mod).
+
+|`https://lab.picodev.fr/mcp` (`spec_draft`, `brief_submit`, `request_meeting`)
+|Les rubriques de `spec-projet.md` ; pour un envoi, vos coordonnées. `spec_draft` dit quoi
+demander ensuite et, pour l'aperçu, fait produire le PDF par le labo, qui vous le rend ; il
+n'envoie rien et n'en garde rien. Un envoi, une demande de rendez-vous ou une question part
+à Picodev par courriel.
+|Entretien et aperçu : quand vous le demandez. Envoi, rendez-vous ou question : seulement après votre oui au
+texte de consentement.
+
+|`https://lab.picodev.fr/hub/sessions/public`
+|Rien : le panneau lit la liste des sessions publiques.
+|Une fois par minute (avec le mod).
+
+|`https://github.com/PICODEV-SAS/picodev-lab-plugin`
+|Rien : `git ls-remote` lit le dernier tag publié.
+|Au démarrage de Claude Code, une fois par jour au plus.
+|===
+
+Le labo ne lit jamais votre disque : seul le contenu des fichiers du sketch (et le programme
+compilé) lui est envoyé, dans les limites ci-dessus. Le dépôt git local n'est envoyé nulle part.
+
+== Confidentialité
+
+* La session ouverte (identifiant, jeton de l'agent, lien du banc) est gardée dans le
+  dossier de données du plugin (`~/.claude/plugins/data/picodev-lab-picodev-lab/`,
+  droits 600), jamais dans votre projet ni dans un dépôt. Le panneau garde le jeton en
+  mémoire, jamais dans son état affiché. Fermer la session, ou une session terminée,
+  l'efface.
+* Le plugin ne contient aucun secret et ne demande aucun compte.
+* `spec-projet.md` et son PDF restent sur votre poste tant que vous ne les envoyez pas.
+* Ce que le labo garde, et combien de temps :
+  https://lab.picodev.fr/confidentialite
+
+== Mise à jour
+
+Une fois par jour au plus, au démarrage, le plugin compare sa version au dernier tag du
+dépôt et vous dit s'il y en a une plus récente. Pour mettre à jour :
+
+----
+claude plugin marketplace update picodev-lab
+claude plugin update picodev-lab@picodev-lab
+----
+
+puis `/reload-plugins` dans Claude Code (ou le bouton « mettre à jour » du panneau).
+Les changements de chaque version : `CHANGELOG.adoc`.
+
+== Signaler un problème
+
+Un bug, une idée : les issues du dépôt. Une faille de sécurité : `SECURITY.md`, pas
+d'issue publique.
+
+== Développement
+
+----
+claude plugin validate .
+claude plugin validate picodev-lab
+claude plugin test picodev-lab                       # le panneau
+python3 -m unittest picodev-lab/scripts/test_lab.py  # le script : session, hook, compilation, git, spec
+----
+
+Essai local : `claude --plugin-dir ./picodev-lab`. Le hook et le panneau parlent au labo
+d'où vient la session (l'origine de son lien) ; `PICODEV_LAB_HUB=http://127.0.0.1:8080`
+pointe le script vers un labo local, session ou pas (aperçu de la spec compris).
+
+== Licence
+
+Apache 2.0 (`LICENSE`). Copyright 2026 Picodev SAS.
+
+La simulation du labo s'appuie sur https://github.com/davidmonterocrespo24/velxio[Velxio]
+(AGPLv3), un programme séparé qui tourne dans votre navigateur ; ce plugin n'en contient
+aucun code. Merci à ses auteurs.
+
+== Crédits
+
+La skill `lab-illustrer` est adaptée de
+https://github.com/cathrynlavery/diagram-design[diagram-design], de Cathryn Lavery (licence
+MIT) : réduite aux figures d'une spec, au style de Picodev, en SVG seulement. Sa licence et sa
+mention de droit d'auteur sont dans `picodev-lab/skills/lab-illustrer/LICENSE` ; la liste
+complète dans `picodev-lab/CREDITS.md`. L'onglet Projet du panneau le rappelle dès qu'une
+illustration est dans la spec.

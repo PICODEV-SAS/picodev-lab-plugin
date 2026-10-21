@@ -1,0 +1,5 @@
+{
+  "mcpServers": {
+    "picodev-lab": { "type": "http", "url": "https://lab.picodev.fr/mcp" }
+  }
+}

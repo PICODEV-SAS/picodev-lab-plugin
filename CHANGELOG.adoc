@@ -3,6 +3,12 @@
 Les versions de `picodev-lab`, la plus récente en tête. Une version est un tag `vX.Y.Z`
 du dépôt.
 
+== 0.9.1
+
+* Publication au registre MCP officiel depuis le workflow du miroir
+  (`.github/workflows/mcp-registry.yml`, connexion GitHub OIDC de l'organisation, sans
+  secret), à chaque tag de version.
+
 == 0.9.0
 
 * Dépôt public : `PICODEV-SAS/picodev-lab-plugin`. L'installation devient

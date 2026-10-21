@@ -1,6 +1,6 @@
 {
   "name": "picodev-lab",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "Picodev Lab from Claude Code: the lab's MCP (Arduino benches simulated in your browser), guided challenges, live push of your sketch.",
   "author": {
     "name": "Picodev"

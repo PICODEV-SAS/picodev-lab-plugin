@@ -1,0 +1,59 @@
+# Publishes server.json to the official MCP registry (registry.modelcontextprotocol.io).
+#
+# Runs in the public PICODEV-SAS/picodev-lab-plugin only: the registry's GitHub OIDC login
+# grants io.github.<repository owner>/*, so no secret is needed. Starts on each version tag,
+# or by hand: gh workflow run mcp-registry.yml -R PICODEV-SAS/picodev-lab-plugin -f tag=vX.Y.Z
+#
+# A version already in the registry cannot be published again: that answer counts as success,
+# so a rerun is harmless.
+name: MCP registry
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Version tag to publish (vX.Y.Z)
+        required: true
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  publish:
+    if: github.repository_owner == 'PICODEV-SAS'
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ inputs.tag || github.ref_name }}
+      PUBLISHER_VERSION: '1.8.1'
+      PUBLISHER_SHA256: a06c9096dcb9727c13555b6be26c7effa707b01f06a4c561ba7a3635443cf2cc
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ inputs.tag || github.ref_name }}
+
+      - name: server.json version matches the tag
+        run: |
+          v=$(jq -r .version server.json)
+          [ "v$v" = "$TAG" ] || { echo "::error::server.json version $v does not match tag $TAG"; exit 1; }
+
+      - name: Install mcp-publisher
+        run: |
+          f=mcp-publisher_linux_amd64.tar.gz
+          curl -fsSL -o "$f" "https://github.com/modelcontextprotocol/registry/releases/download/v${PUBLISHER_VERSION}/$f"
+          echo "$PUBLISHER_SHA256  $f" | sha256sum -c -
+          tar -xzf "$f" mcp-publisher
+
+      - name: Publish
+        run: |
+          ./mcp-publisher login github-oidc
+          if ! out=$(./mcp-publisher publish server.json 2>&1); then
+            echo "$out"
+            grep -q 'cannot publish duplicate version' <<<"$out" || exit 1
+            echo "::notice::$TAG is already in the registry"
+            exit 0
+          fi
+          echo "$out"

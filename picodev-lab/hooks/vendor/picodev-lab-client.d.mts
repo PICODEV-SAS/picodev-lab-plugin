@@ -447,6 +447,18 @@ export declare class LabClient {
         level: number;
         levels: number;
     }>;
+    /**
+     * Challenge mode only: proposes `value` for the `answer` test `test` of the current level (contract 0.21).
+     * One per second per session; `ok` is the verdict itself (true: correct, the test passes in the bench; false: wrong answer).
+     * `read_simulation().challenge.brief.hints` lists only the hints the visitor revealed in the bench.
+     */
+    submit_answer(args: {
+        test: string;
+        value: string;
+    }): Promise<{
+        test: string;
+        ok: boolean;
+    }>;
     private optSession;
     /** The spec interview (contract 0.14): rules, sections and what to ask next; pdf: true adds the PDF. Never a session. */
     spec_draft(args?: {

@@ -1,4 +1,4 @@
-picodev-lab-client v0.8.0
-built: git clone -b v0.8.0 https://github.com/PICODEV-SAS/picodev-lab-client && npm ci && npm run bundle
-fe4b97952cdc1f3110e1acb250b7b4d4395ffacdfd8319df2b52b59240d01989  picodev-lab-client.mjs
-daee90a602dc41412629f918aa3fce116e1294df663b8767533c7b8f6eb427dd  picodev-lab-client.d.mts
+picodev-lab-client v0.9.0
+built: git clone -b v0.9.0 https://github.com/PICODEV-SAS/picodev-lab-client && npm ci && npm run bundle
+22291e4076e86a0f859431845b8b9525eb637b32a8054683b157b2bfaaf7f3bb  picodev-lab-client.mjs
+439682027a77360aee92902f11ea65691ef9869dd0ed4f56c352348d97336a1d  picodev-lab-client.d.mts

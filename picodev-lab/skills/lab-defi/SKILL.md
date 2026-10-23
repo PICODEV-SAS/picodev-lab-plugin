@@ -20,7 +20,8 @@ une en Défi. N'affichez jamais `agent_token`.
   (dépôts, site, pages web, dossiers `solutions/`). Vous travaillez avec la consigne, les
   résultats des tests et leurs mesures, le journal de compilation, les événements de la
   simulation, la fiche du montage et les captures. Les indices (`brief.hints`) se donnent **un par un, quand le
-  visiteur en demande un**.
+  visiteur en demande un**. `brief.hints` ne contient que les indices que le visiteur a dévoilés
+  dans le banc : pour un indice de plus, demandez-lui d'en dévoiler un, ne le devinez pas.
 - Les résultats sont ceux d'une **simulation** dans le navigateur : dites « en simulation ».
 - Expliquez ce que vous changez et pourquoi, en peu de mots : le visiteur apprend.
 
@@ -28,8 +29,8 @@ une en Défi. N'affichez jamais `agent_token`.
 
 0. Une fois par session : `read_setup(setup)` (le `setup` de `… show`). Le montage (`circuit`) et
    les voies mesurables (`probes`) disent quelle broche regarder ; l'image du montage aide à le
-   voir. La fiche en dit plus que la consigne : ses `hints`, ses `couplings` (seuils de la scène,
-   par exemple l'angle où le bouton s'enfonce) et son `scene` donnent souvent la réponse. Ne vous en
+   voir. La fiche en dit plus que la consigne : ses `couplings` (seuils de la scène,
+   par exemple l'angle où le bouton s'enfonce) et son `scene` aident à lire le montage. Ne vous en
    servez pas pour trouver la valeur à régler : mesurez (étape 5), essayez, relisez les tests.
 1. `read_simulation(session, agent_token)`. `state` à `null` : le navigateur n'est pas connecté,
    redonnez `open_url` et attendez. Sinon, `challenge` donne `level` (indice à partir de 0 :
@@ -53,7 +54,10 @@ une en Défi. N'affichez jamais `agent_token`.
      relisez avec `since_ms=0`. `level` sur `levels` : où en est le défi. `owner` faux : le
      navigateur est fermé, redonnez `open_url` ;
    - un test `failed` : partez de sa mesure (`detail`) et des événements (`events` :
-     `{t, k, pin, v}`, `k` = `pin`, `pwm`, `servo` ou `serial`).
+     `{t, k, pin, v}`, `k` = `pin`, `pwm`, `servo` ou `serial`);
+   - un test dont la fiche dit `"type": "answer"` se résout par
+     `submit_answer(session, agent_token, test, value)` : dites au visiteur ce que vous proposez et
+     pourquoi, une réponse par seconde ; le verdict s'affiche dans le banc et dans `results`.
 5. **Mesurer avant et après.** Un problème de temps (rebond, période, rapport cyclique, délai) ou de
    tension : capturez plutôt que deviner, une fois avant la correction, une fois après, et comparez.
    - logique : `capture_logic(session, agent_token, pins?, duration_ms=1000)` (voies `logic` de la fiche) ;

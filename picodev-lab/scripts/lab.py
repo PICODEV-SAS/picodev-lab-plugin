@@ -75,7 +75,9 @@ MAX_FIGURES, MAX_FIGURE, MAX_FIGURES_ALL, MAX_CAPTION = 3, 200 * 1024, 400 * 102
 
 
 class HubError(Exception):
-    pass
+    def __init__(self, msg, code=None):
+        super().__init__(msg)
+        self.code = code  # _meta "lab.picodev.fr/error" (contract 0.20): gone, no_browser; None from an older hub
 
 
 # ── where things are ──
@@ -152,7 +154,8 @@ def mcp(hub, tool, args, timeout=15):
     res = msg["result"]
     texts = [c.get("text", "") for c in res.get("content", []) if c.get("type") == "text"]
     if res.get("isError"):
-        raise HubError(re.sub(r"^Error executing tool \w+: ", "", "".join(texts)))
+        code = (res.get("_meta") or {}).get("lab.picodev.fr/error")
+        raise HubError(re.sub(r"^Error executing tool \w+: ", "", "".join(texts)), code if isinstance(code, str) else None)
     sc = res.get("structuredContent")
     if isinstance(sc, dict):  # a list or a string comes wrapped as {"result": ...}
         return sc["result"] if set(sc) == {"result"} else sc
@@ -165,9 +168,19 @@ def mcp(hub, tool, args, timeout=15):
     return values[0] if len(values) == 1 else values
 
 
+def coded(err, code, text_re):
+    """The hub's error code decides (an unknown code is an ordinary error); the text only for a hub that sends none."""
+    if getattr(err, "code", None) is not None:
+        return err.code == code
+    return bool(re.search(text_re, str(err), re.I))  # French then English (hub v0.4.1)
+
+
 def is_gone(err):
-    # ponytail: the hub has no error code; its text is French then English (hub v0.4.1), both accepted
-    return bool(re.search(r"inconnue|unknown", str(err), re.I))
+    return coded(err, "gone", r"inconnue|unknown")
+
+
+def is_no_browser(err):
+    return coded(err, "no_browser", r"navigateur|browser")
 
 
 # ── session file ──
@@ -344,7 +357,7 @@ def push(a, s, folder):
         if is_gone(e):
             session_file(a).unlink(missing_ok=True)
             msg = "la session du labo est terminée : ouvrez-en une autre avec /lab"
-        elif re.search(r"navigateur|browser", str(e), re.I):
+        elif is_no_browser(e):
             msg = "aucun navigateur connecté : ouvrez le banc (open_url) pour que le code y soit poussé"
         else:
             msg = f"poussée impossible : {e}"

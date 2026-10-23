@@ -3,6 +3,21 @@
 Les versions de `picodev-lab`, la plus récente en tête. Une version est un tag `vX.Y.Z`
 du dépôt.
 
+== 0.10.0
+
+* Onglet « Banc réel » du panneau : les bancs réels du montage (`benches` de `list_setups`,
+  ouverts ou annoncés « bientôt »), « rejoindre la file » (`queue_join`), votre place et l'attente
+  estimée, puis votre tour avec le temps qui reste, « quitter la file » ou « rendre le banc »
+  (`queue_leave`), et le lien qui ouvre le banc. Pas de vidéo dans le terminal : elle se regarde
+  sur la page du banc. Un labo dont `session_status` ne donne pas la file le dit.
+* Partage : le lien signé par le labo (`share` de `session_status`, page « Relevé par le labo »)
+  dans le panneau et `/lab-partage`, à la place du lien construit sur le poste quand le labo le
+  donne.
+* Erreurs du labo : la session terminée et l'absence de navigateur se reconnaissent au code que
+  le labo joint à l'erreur (`lab.picodev.fr/error` : `gone`, `no_browser`), dans le hook d'envoi
+  comme dans le panneau ; le texte ne sert plus que pour un labo qui n'envoie pas de code.
+* `picodev-lab-client` v0.8.0.
+
 == 0.9.1
 
 * Publication au registre MCP officiel depuis le workflow du miroir

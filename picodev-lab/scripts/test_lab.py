@@ -46,8 +46,11 @@ class Hub(BaseHTTPRequestHandler):
         msg = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
         tool, args = msg["params"]["name"], msg["params"]["arguments"]
         CALLS.append((tool, args))
-        is_error, text = ANSWER.get(tool, (False, "{}"))
-        body = json.dumps({"jsonrpc": "2.0", "id": 1, "result": {"content": [{"type": "text", "text": text}], "isError": is_error}})
+        is_error, text, *code = ANSWER.get(tool, (False, "{}"))  # a third item: the error code in _meta (contract 0.20)
+        result = {"content": [{"type": "text", "text": text}], "isError": is_error}
+        if code:
+            result["_meta"] = {"lab.picodev.fr/error": code[0]}
+        body = json.dumps({"jsonrpc": "2.0", "id": 1, "result": result})
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
         self.end_headers()
@@ -159,6 +162,20 @@ class LabTest(unittest.TestCase):
             ANSWER["push_to_editor"] = (True, "Error executing tool push_to_editor: " + gone)
             self.assertIn("terminée", self.hook(self.proj / "sketch" / "sketch.ino")["systemMessage"])
             self.assertNotEqual(self.lab("show").returncode, 0)  # the file is gone
+        ANSWER["push_to_editor"] = (False, "Code envoyé au navigateur.")
+
+    def test_error_code_before_text(self):
+        # contract 0.20: the code in _meta decides, whatever the text; an unknown code is an ordinary error
+        self.save()
+        ANSWER["push_to_editor"] = (True, "Il manque quelque chose.", "no_browser")
+        self.assertIn("aucun navigateur connecté", self.hook(self.proj / "sketch" / "sketch.ino")["systemMessage"])
+        ANSWER["push_to_editor"] = (True, "Session inconnue, navigateur absent.", "later_code")
+        out = self.hook(self.proj / "sketch" / "sketch.ino")["systemMessage"]
+        self.assertIn("poussée impossible", out)
+        self.assertEqual(self.lab("show").returncode, 0)  # not gone: the session is kept
+        ANSWER["push_to_editor"] = (True, "Autre chose.", "gone")
+        self.assertIn("terminée", self.hook(self.proj / "sketch" / "sketch.ino")["systemMessage"])
+        self.assertNotEqual(self.lab("show").returncode, 0)
         ANSWER["push_to_editor"] = (False, "Code envoyé au navigateur.")
 
     def test_compiled_here_is_push_program(self):

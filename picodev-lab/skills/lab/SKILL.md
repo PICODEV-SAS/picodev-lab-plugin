@@ -8,7 +8,8 @@ argument-hint: "[setup] [libre|defi]"
 
 Le serveur MCP `picodev-lab` (lab.picodev.fr) ouvre un banc Arduino **simulé dans le navigateur
 du visiteur**. Sans navigateur ouvert sur le banc, rien ne simule. Dites toujours « simulation »,
-jamais « banc réel » : le banc réel n'existe pas encore.
+jamais « banc réel » : le banc réel, une vraie carte du labo, ne s'obtient que par sa file
+(`queue_join`, onglet « Banc réel » du panneau).
 
 ## Le fichier de session
 

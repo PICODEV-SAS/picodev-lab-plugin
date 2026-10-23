@@ -20,7 +20,7 @@ const TABS = [
   ['simulation', 'Simulation', 'Simulation'],
   ['journal', 'Journal', 'Log'],
   ['projet', 'Projet', 'Project'],
-  ['banc', 'Banc réel (bientôt)', 'Real bench (soon)'],
+  ['banc', 'Banc réel', 'Real bench'],
 ] as const
 const POLL_MS = 2000 // session_status every 2 s while a session is open; read_simulation only when needed
 const FOLLOW = 10 // reads of a run whose tests are still pending or running, at most (as /lab-defi)
@@ -485,6 +485,21 @@ const nextLevel = async ($: EngineInterface) => {
   await addJournal($, 'next_level', true)
   await tick($)
   await say($, tr(await read($, fr))(`niveau ${v.level + 1}/${v.levels} demandé au banc`, `level ${v.level + 1}/${v.levels} asked of the bench`))
+}
+
+/** The real bench's queue (contract 0.20): join an offer of the session's setup, or leave; the poll's session_status shows the place. */
+const queue = async ($: EngineInterface, kind: string | null) => {
+  if (!held()) return
+  const tool = kind ? 'queue_join' : 'queue_leave'
+  try {
+    await (kind ? hubClient($).queue_join({ kind }) : hubClient($).queue_leave())
+  } catch (err) {
+    await addJournal($, tool, false)
+    if (isGone(err)) return gone($)
+    return say($, why(err))
+  }
+  await addJournal($, tool, true)
+  await tick($)
 }
 
 const readCapture = async ($: EngineInterface, was: CaptureView) => {
@@ -1003,7 +1018,8 @@ export const register: Register = on => {
     // as the bench offers « Niveau suivant »: all green, owner connected, not the last level (levels unknown: the hub decides)
     const green = browser && allPassed(s?.results)
     const last = lvl != null && ss?.levels != null && lvl + 1 >= ss.levels
-    const link = l ? shareLink(hub, l.setup, l.mode, levels, elapsed) : ''
+    // the hub's signed link (contract 0.20) when it gives one, else the one built here
+    const link = ss?.share?.startsWith('/p/') ? `${hub}${ss.share}` : l ? shareLink(hub, l.setup, l.mode, levels, elapsed) : ''
     const text = l ? shareText(l.mode, levels, elapsed, F) : ''
     const nets = shareUrls(text, link)
     const noSession = <Text color={SUBTLE}>{T("Pas de session : choisissez un montage dans l'onglet Session (Libre ou Défi), ou tapez /lab.", 'No session: pick a setup in the Session tab (Free or Challenge), or type /lab.')}</Text>
@@ -1318,14 +1334,61 @@ export const register: Register = on => {
       ]),
     ]
 
+    // ── Banc réel tab (contract 0.20): the setup's offers (list_setups), the place in the queue (session_status) ──
+    const q = ss?.queue
+    const offers = (l ? st.filter(m => m.id === l.setup) : st).flatMap(m => (m.benches ?? []).map(b => ({ setup: m, b })))
+    const placeRow = !l
+      ? null
+      : !ss
+        ? row(T('file', 'queue'), '—', SUBTLE)
+        : !q
+          ? row(T('file', 'queue'), T('ce labo ne la donne pas encore', 'this lab does not give it yet'), SUBTLE)
+          : q.state === 'turn'
+            ? row(
+                T('votre tour', 'your turn'),
+                `${q.bench ?? q.kind ?? ''}${q.ends_at ? ` · ${T('reste', 'left')} ${hm(q.ends_at - now)}` : ''}`,
+                OK,
+              )
+            : q.state === 'waiting'
+              ? row(
+                  T('file', 'queue'),
+                  `${q.kind ?? ''} · ${T('place', 'place')} ${q.position ?? '?'}${q.waiting ? `/${q.waiting}` : ''}${q.eta_s ? ` · ${T('environ', 'about')} ${hm(q.eta_s)}` : ''}`,
+                  CORAL,
+                )
+              : row(T('file', 'queue'), T('pas dans la file', 'not queued'), SUBTLE)
+    const canJoin = !!l && q?.state === 'none'
     const bancTab = [
       card('banc', T('Banc réel', 'Real bench'), () => [
         <Text color={SUBTLE}>
           {T(
-            "Bientôt : votre programme sur une vraie carte du labo, avec file d'attente, analyseur logique et caméra. Aujourd'hui tout se passe en simulation, dans votre navigateur.",
-            "Soon: your program on a real board in the lab, with a queue, a logic analyzer and a camera. Today everything runs in simulation, in your browser.",
+            "Votre programme sur une vraie carte du labo, à tour de rôle : rejoignez la file d'une offre, le banc vous donne la main pour un temps limité. La vidéo se regarde dans le navigateur, sur la page du banc.",
+            'Your program on a real board in the lab, in turns: join the queue of an offer, the bench hands you control for a limited time. The video is watched in the browser, on the bench page.',
           )}
         </Text>,
+        ...(offers.length === 0
+          ? [<Text color={SUBTLE}>{l ? T("pas de banc réel pour ce montage", 'no real bench for this setup') : T("aucun banc réel pour l'instant", 'no real bench for now')}</Text>]
+          : offers.map(({ setup, b }) => (
+              <Box justifyContent="space-between">
+                <Text color={INK}>
+                  {l ? '' : `${setup.title ?? setup.id} · `}
+                  {b.kind}
+                  <Text color={SUBTLE}>
+                    {b.status === 'soon'
+                      ? T(' · bientôt', ' · soon')
+                      : ` · ${b.free}/${b.benches} ${T('libre', 'free')}${b.free > 1 && F ? 's' : ''} · ${b.waiting} ${T('en attente', 'waiting')}`}
+                  </Text>
+                </Text>
+                {b.status === 'soon' ? soon : canJoin && act(`join:${b.kind}`, T('rejoindre la file', 'join the queue'), () => queue($, b.kind))}
+              </Box>
+            ))),
+        placeRow,
+        l && (
+          <Box flexWrap="wrap" gap={1}>
+            {benchLink(l)}
+            {q && q.state !== 'none' && btn('leave', q.state === 'turn' ? T('rendre le banc', 'give the bench back') : T('quitter la file', 'leave the queue'), () => queue($, null))}
+          </Box>
+        ),
+        !l && <Text color={SUBTLE}>{T("Ouvrez une session (onglet Session) pour rejoindre la file d'un banc.", "Open a session (Session tab) to join a bench's queue.")}</Text>,
       ]),
     ]
 

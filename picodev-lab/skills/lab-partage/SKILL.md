@@ -33,8 +33,14 @@ En fin de défi, ou quand le visiteur veut partager sa session :
 1. `read_simulation` : niveaux réussis = `challenge.level`, plus 1 si tous les `results` du
    niveau sont `passed` (0 en Libre). Durée = maintenant moins `created_at` de `session_status`
    (secondes Unix ; à défaut, `opened_at` de la sortie de `show`), bornée à 86 400.
-2. Lien : `<origine de open_url>/p/<setup>.<mode>.<niveaux>.<secondes>`, par exemple
-   `https://lab.picodev.fr/p/setup-a.challenge.4.372` (`mode` : `free` ou `challenge`).
+2. Lien : si `session_status` rend `share` (un chemin `/p/…` signé par le labo), le lien est
+   `<origine de open_url><share>`, tel quel, par exemple
+   `https://lab.picodev.fr/p/setup-a.challenge.4.372.Ab3dE5gH7jK9mN1p`. Le labo y a écrit le
+   niveau et la durée qu'il a vus, et la page dit « Relevé par le labo ». Ne le modifiez pas, et
+   ne dites jamais « vérifié » : le niveau reste un résultat de la simulation dans le navigateur.
+   Sans `share` (un labo plus ancien) : `<origine de open_url>/p/<setup>.<mode>.<niveaux>.<secondes>`,
+   par exemple `https://lab.picodev.fr/p/setup-a.challenge.4.372` (`mode` : `free` ou
+   `challenge`).
 3. Proposez un texte, que le visiteur peut changer, par exemple : « J'ai réussi un défi Arduino
    en 6 min 12 s sur le banc simulé de Picodev Lab, piloté par mon agent. » Dites « simulé ».
 4. Donnez le lien et les deux liens de publication, `T` le texte encodé, `U` le lien encodé

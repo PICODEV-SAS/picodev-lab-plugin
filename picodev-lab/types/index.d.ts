@@ -43,8 +43,14 @@ export type SessionStatus = {
   levels: number | null
   /** hub v0.6.1: the session's capture (the agent's); null without one */
   capture?: { id: string; kind: 'logic' | 'analog'; state: 'recording' | 'ready' | 'failed' } | null
+  /** contract 0.20: the place in the real bench's queue (queue_status); absent from an older hub. ends_at in Unix seconds */
+  queue?: { state: 'none' | 'waiting' | 'turn'; kind?: string; position?: number; waiting?: number; eta_s?: number; bench?: string; ends_at?: number }
+  /** contract 0.20: the signed share link, `/p/<share>`, on the lab's origin */
+  share?: string
 }
-export type Setup = { id: string; title?: string; summary?: string; modes: string[]; i18n?: { en?: { title?: string; summary?: string } } }
+/** A real bench offer of a setup (list_setups): status open is offered, soon is announced (counts 0). */
+export type BenchOffer = { kind: string; benches: number; free: number; waiting: number; status?: 'open' | 'soon' }
+export type Setup = { id: string; title?: string; summary?: string; modes: string[]; benches?: BenchOffer[]; i18n?: { en?: { title?: string; summary?: string } } }
 export type PublicSession = { session: string; viewer: string; setup: string; mode: string; level?: number; started_at: number; viewers: number }
 export type Channel = { pin: number; label?: string; edges: number; period_ms?: number; duty?: number; high_ms?: number; low_ms?: number }
 export type AnalogChannel = { pin: number; label: string; min_v: number | null; max_v: number | null; mean_v: number | null; period_ms?: number }

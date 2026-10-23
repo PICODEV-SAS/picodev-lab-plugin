@@ -166,7 +166,7 @@ const stub = (
             JSON.stringify({
               jsonrpc: '2.0',
               id: 1,
-              result: { content: [{ type: 'text', text: '{"id": "setup-a"}' }], isError: false, structuredContent: { result: [{ id: 'setup-a', title: 'Setup A · bras servo', modes: ['free', 'challenge'], i18n: { en: { title: 'Setup A · servo arm' } } }, { id: 'setup-b', title: 'Setup B · hélice', modes: ['free'] }] } },
+              result: { content: [{ type: 'text', text: '{"id": "setup-a"}' }], isError: false, structuredContent: { result: [{ id: 'setup-a', title: 'Setup A · bras servo', modes: ['free', 'challenge'], benches: [{ kind: 'nano-servo', benches: 2, free: 1, waiting: 3, status: 'open' }, { kind: 'uno-led', benches: 0, free: 0, waiting: 0, status: 'soon' }], i18n: { en: { title: 'Setup A · servo arm' } } }, { id: 'setup-b', title: 'Setup B · hélice', modes: ['free'] }] } },
             })
           : msg.params.name === 'close_session'
             ? answer({ state: 'ended' })
@@ -549,5 +549,54 @@ test('in English for a non-French visitor: tabs, cards, the journal in plain wor
   await ui.press({ key: 'tab:journal' })
   expect(await ui.find({ type: 'Text', text: /setup sheet/ })).toBeDefined()
   expect(await ui.find({ type: 'Text', text: /read_setup/ })).toBeUndefined()
+  await ui.unmount()
+})
+
+test('Banc réel: the offers of the setup, queue_join, the place, then the turn with its time left and queue_leave', async ($, on) => {
+  const status: Record<string, unknown> = { ...STATUS, queue: { state: 'none' } }
+  const { calls } = stub(on, { status })
+  mock.store(on)
+  const ui = await $.ui.mount({ plugin: 'picodev-lab', surface: 'terminal', ...PANE })
+  await ui.press({ key: 'refresh' })
+  await ui.press({ key: 'tab:banc' })
+  expect(await ui.find({ type: 'Text', text: /1\/2 libre · 3 en attente/ })).toBeDefined()
+  expect(await ui.find({ key: 'join:uno-led' })).toBeUndefined() // soon: announced, not offered
+  expect(await ui.find({ type: 'Text', text: /pas dans la file/ })).toBeDefined()
+  await ui.press({ key: 'join:nano-servo' })
+  expect(calls.find(c => c.tool === 'queue_join')?.args).toEqual({ session: 'abc', agent_token: 'secret-token', kind: 'nano-servo' })
+
+  status.queue = { state: 'waiting', kind: 'nano-servo', position: 2, waiting: 3, eta_s: 600 }
+  await ui.press({ key: 'refresh' })
+  expect(await ui.find({ type: 'Text', text: /place 2\/3 · environ 10 min/ })).toBeDefined()
+  expect(await ui.find({ key: 'join:nano-servo' })).toBeUndefined()
+
+  status.queue = { state: 'turn', kind: 'nano-servo', bench: 'nano-servo-1', ends_at: NOW / 1000 + 300 }
+  await ui.press({ key: 'refresh' })
+  expect(await ui.find({ type: 'Text', text: /nano-servo-1 · reste 5 min/ })).toBeDefined()
+  expect(await ui.find({ type: 'Link', label: /ouvrir le banc/ })).toBeDefined()
+  await ui.press({ key: 'leave' })
+  expect(calls.some(c => c.tool === 'queue_leave')).toBe(true)
+  await ui.unmount()
+})
+
+test('Banc réel on a hub without queue in session_status: said, no join button', async ($, on) => {
+  stub(on, { status: { ...STATUS } })
+  mock.store(on)
+  const ui = await $.ui.mount({ plugin: 'picodev-lab', surface: 'terminal', ...PANE })
+  await ui.press({ key: 'refresh' })
+  await ui.press({ key: 'tab:banc' })
+  expect(await ui.find({ type: 'Text', text: /ne la donne pas encore/ })).toBeDefined()
+  expect(await ui.find({ key: 'join:nano-servo' })).toBeUndefined()
+  await ui.unmount()
+})
+
+test('share: the hub signed link from session_status when given', async ($, on) => {
+  const passed = { ...SIM, challenge: { ...SIM.challenge, results: SIM.challenge.results.map(r => ({ ...r, status: 'passed' })) } }
+  stub(on, { status: { ...STATUS, share: '/p/setup-a.challenge.2.900.AAAAAAAAAAAAAAAA' }, sim: passed })
+  mock.store(on)
+  const ui = await $.ui.mount({ plugin: 'picodev-lab', surface: 'terminal', ...PANE })
+  await ui.press({ key: 'refresh' })
+  await ui.press({ key: 'tab:defi' })
+  expect(await ui.find({ type: 'Text', text: /lab\.picodev\.fr\/p\/setup-a\.challenge\.2\.900\.AAAAAAAAAAAAAAAA/ })).toBeDefined()
   await ui.unmount()
 })

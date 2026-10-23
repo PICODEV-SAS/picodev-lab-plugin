@@ -121,12 +121,12 @@ dossier déjà dans votre propre dépôt n'est pas touché.
 
 == Le panneau « Lab »
 
-Onglets Session, Défi (Libre en mode libre), Simulation, Journal, Projet (et Banc réel, à
-venir) : la session, l'étape suivante, où est le sketch et comment il a été compilé, la
+Onglets Session, Défi (Libre en mode libre), Simulation, Journal, Projet, Banc réel : la session, l'étape suivante, où est le sketch et comment il a été compilé, la
 visibilité (confirmée avant de couper les spectateurs), le montage (schéma, composants, voies mesurées), la consigne et les tests du
 niveau (et « Niveau suivant » quand ils sont tous réussis), la compilation, les traces des
 broches, la série, les captures logique et analogique (chronogramme à la demande), les appels
-de l'agent au labo, l'avancement de votre spec.
+de l'agent au labo, l'avancement de votre spec, les bancs réels du montage, votre place dans leur
+file, le temps qui reste à votre tour (la vidéo se regarde sur la page du banc, dans le navigateur).
 Une bande au-dessus du prompt et un segment de la ligne d'état résument la session. Le
 panneau relit l'état de la session toutes les 2 secondes (`session_status`, sans trace dans
 votre journal) et ne relit la simulation que quand elle a changé ; la capture de l'agent, il
